@@ -537,3 +537,41 @@ input[type="file"] { display: none; }
 .status-badge.late      { background: rgba(255,193,7,.1);  border-color: rgba(255,193,7,.3);  color: var(--yellow); }
 .status-badge.pending   { background: rgba(74,85,104,.2);  border-color: rgba(74,85,104,.4);  color: var(--muted); }
 .status-time { color: var(--muted); font-size: 11px; flex-shrink: 0; }
+/* ─── User List ─── */
+.user-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 6px;
+    transition: border-color .2s;
+}
+
+.user-list-item:hover {
+    border-color: rgba(0, 229, 255, .2);
+}
+
+.user-list-name {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.user-list-role {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(74, 85, 104, .2);
+    border: 1px solid rgba(74, 85, 104, .3);
+}
+
+.user-list-role.teacher {
+    background: rgba(0, 229, 255, .1);
+    border-color: rgba(0, 229, 255, .3);
+    color: var(--accent);
+}

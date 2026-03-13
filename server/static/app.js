@@ -46,6 +46,7 @@ async function login() {
     fetchFiles();
     fetchTasks();
     if (currentRole === 'teacher') fetchLateNotifications();
+    if (currentRole === 'teacher') fetchUsers();
 }
 
 // ─── Logout ───
@@ -91,6 +92,7 @@ async function addUser() {
         showToast(text, 'success');
         document.getElementById('new-username').value = '';
         document.getElementById('new-password').value = '';
+        fetchUsers();
     } else {
         showToast('❌ ' + text, 'error');
     }
@@ -161,6 +163,55 @@ async function uploadFolder(files) {
         fetchTasks();  // 提出済みを反映して課題一覧を更新
         if (currentRole === 'teacher') fetchLateNotifications();
     }, 400);
+}
+
+// ─── Fetch Users (先生のみ) ───
+async function fetchUsers() {
+    try {
+        const res = await fetch('/users');
+        if (!res.ok) return;
+        const users = await res.json();
+        renderUsers(users);
+    } catch (e) {
+        console.warn('ユーザー一覧取得失敗', e);
+    }
+}
+
+function renderUsers(users) {
+    const list = document.getElementById('user-list');
+    if (!list) return;
+
+    if (!users || users.length === 0) {
+        list.innerHTML = `<p class="notif-empty">// ユーザーがいません</p>`;
+        return;
+    }
+
+    list.innerHTML = users.map(u => `
+        <div class="user-list-item">
+            <span class="user-list-name">
+                ${u.role === 'teacher' ? '👨‍🏫' : '👨‍🎓'} ${u.username}
+            </span>
+            <span class="user-list-role ${u.role === 'teacher' ? 'teacher' : ''}">${u.role}</span>
+            ${u.username !== 'admin' ? `
+            <button class="action-btn del" style="padding:4px 10px; font-size:10px;"
+                onclick="deleteUser('${u.username}')">✕ 削除</button>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+
+async function deleteUser(username) {
+    const res = await fetch(`/users?username=${encodeURIComponent(username)}`, {
+        method: 'DELETE',
+    });
+    const text = await res.text();
+    if (res.ok) {
+        showToast(text, 'success');
+        fetchUsers();
+    } else {
+        showToast('❌ ' + text, 'error');
+    }
 }
 
 // ─── Fetch Files ───

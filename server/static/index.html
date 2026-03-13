@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
- 
+
 <!-- ══════════════════════════
      LOGIN SCREEN
 ══════════════════════════ -->
@@ -32,7 +32,7 @@
         <button class="login-btn" onclick="login()">ログイン →</button>
     </div>
 </div>
- 
+
 <!-- ══════════════════════════
      MAIN APP
 ══════════════════════════ -->
@@ -51,14 +51,14 @@
             <button class="logout-btn" onclick="logout()">logout</button>
         </div>
     </header>
- 
+
     <main>
- 
+
         <!-- ユーザー管理（先生のみ） -->
         <div class="manage-section teacher-only-block">
             <div class="section-label">ユーザー管理</div>
             <div class="manage-card">
-                <div class="form-row">
+                <div class="form-row" style="margin-bottom:16px;">
                     <input type="text" id="new-username" placeholder="ユーザー名" />
                     <input type="password" id="new-password" placeholder="パスワード" />
                     <select id="new-role">
@@ -67,9 +67,10 @@
                     </select>
                     <button class="action-btn run" onclick="addUser()">＋ 追加</button>
                 </div>
+                <div id="user-list"></div>
             </div>
         </div>
- 
+
         <!-- パスワード変更（全員） -->
         <div class="manage-section">
             <div class="section-label">パスワード変更</div>
@@ -81,11 +82,11 @@
                 </div>
             </div>
         </div>
- 
+
         <!-- ══════════════════════════
              課題管理
         ══════════════════════════ -->
- 
+
         <!-- 課題作成（先生のみ） -->
         <div class="manage-section teacher-only-block">
             <div class="section-label">課題作成</div>
@@ -102,7 +103,7 @@
                 </div>
             </div>
         </div>
- 
+
         <!-- 遅延提出通知（先生のみ） -->
         <div class="manage-section teacher-only-block">
             <div class="section-label">⚠️ 遅延提出通知</div>
@@ -112,7 +113,7 @@
                 </div>
             </div>
         </div>
- 
+
         <!-- 課題一覧（全員） -->
         <div class="files-section" style="margin-bottom: 48px;">
             <div class="files-header">
@@ -126,7 +127,7 @@
                 </div>
             </div>
         </div>
- 
+
         <!-- Upload -->
         <div class="upload-section">
             <div class="section-label">ファイルアップロード</div>
@@ -159,7 +160,7 @@
                 webkitdirectory multiple
                 onchange="uploadFolder(this.files)">
         </div>
- 
+
         <!-- File List -->
         <div class="files-section">
             <div class="files-header">
@@ -173,20 +174,15 @@
                 </div>
             </div>
         </div>
- 
+
     </main>
 </div>
- 
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
- 
+
 <!-- 提出状況モーダル（JS生成） -->
- 
+
 <script src="../static/app.js"></script>
 </body>
 </html>
- 
-
-
-
-

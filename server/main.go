@@ -42,7 +42,7 @@ type FileInfo struct {
 
 func initDB() {
 	var err error
-	db, err = sql.Open("sqlite3", "./users.db")
+	db, err = sql.Open("sqlite3", getEnv("DB_PATH", "./users.db"))
 	if err != nil {
 		panic(err)
 	}
@@ -103,6 +103,64 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"username": req.Username, "role": role})
+}
+
+func usersHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		listUsersHandler(w, r)
+	case http.MethodPost:
+		addUserHandler(w, r)
+	case http.MethodDelete:
+		deleteUserHandler(w, r)
+	default:
+		http.Error(w, "未対応のメソッドです", http.StatusMethodNotAllowed)
+	}
+}
+
+func listUsersHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query(`SELECT username, role FROM users ORDER BY role, username`)
+	if err != nil {
+		http.Error(w, "読み込みエラー", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	type UserInfo struct {
+		Username string `json:"username"`
+		Role     string `json:"role"`
+	}
+	var users []UserInfo
+	for rows.Next() {
+		var u UserInfo
+		rows.Scan(&u.Username, &u.Role)
+		users = append(users, u)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
+func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("username")
+	if name == "" {
+		http.Error(w, "ユーザー名が指定されていません", http.StatusBadRequest)
+		return
+	}
+	if name == "admin" {
+		http.Error(w, "adminは削除できません", http.StatusForbidden)
+		return
+	}
+	res, err := db.Exec(`DELETE FROM users WHERE username = ?`, name)
+	if err != nil {
+		http.Error(w, "削除に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		http.Error(w, "ユーザーが見つかりません", http.StatusNotFound)
+		return
+	}
+	fmt.Fprintf(w, "✅ %s を削除しました", name)
 }
 
 func addUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -417,7 +475,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/users", addUserHandler)
+	http.HandleFunc("/users", usersHandler)
 	http.HandleFunc("/users/passwd", changePasswordHandler)
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/finalize", finalizeHandler)
