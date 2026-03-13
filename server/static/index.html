@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
-
+ 
 <!-- ══════════════════════════
      LOGIN SCREEN
 ══════════════════════════ -->
@@ -19,7 +19,6 @@
             <div class="logo-text">Py<span>Lab</span></div>
         </div>
         <p class="login-subtitle">// Python課題研究ファイルサーバー</p>
-
         <div class="form-group">
             <label>Username</label>
             <input type="text" id="login-username" placeholder="student_id or teacher"
@@ -30,11 +29,10 @@
             <input type="password" id="login-password" placeholder="••••••••"
                 onkeydown="if(event.key==='Enter') login()" />
         </div>
-
         <button class="login-btn" onclick="login()">ログイン →</button>
     </div>
 </div>
-
+ 
 <!-- ══════════════════════════
      MAIN APP
 ══════════════════════════ -->
@@ -53,9 +51,9 @@
             <button class="logout-btn" onclick="logout()">logout</button>
         </div>
     </header>
-
+ 
     <main>
-
+ 
         <!-- ユーザー管理（先生のみ） -->
         <div class="manage-section teacher-only-block">
             <div class="section-label">ユーザー管理</div>
@@ -71,7 +69,7 @@
                 </div>
             </div>
         </div>
-
+ 
         <!-- パスワード変更（全員） -->
         <div class="manage-section">
             <div class="section-label">パスワード変更</div>
@@ -83,10 +81,63 @@
                 </div>
             </div>
         </div>
-
+ 
+        <!-- ══════════════════════════
+             課題管理
+        ══════════════════════════ -->
+ 
+        <!-- 課題作成（先生のみ） -->
+        <div class="manage-section teacher-only-block">
+            <div class="section-label">課題作成</div>
+            <div class="manage-card">
+                <div class="form-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <input type="text" id="task-title" placeholder="課題タイトル" style="flex:2; min-width:200px;" />
+                        <input type="datetime-local" id="task-deadline" style="flex:1; min-width:180px;" />
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <input type="text" id="task-desc" placeholder="課題の説明" style="flex:1;" />
+                        <button class="action-btn run" onclick="createTask()" style="white-space:nowrap;">＋ 追加</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+ 
+        <!-- 遅延提出通知（先生のみ） -->
+        <div class="manage-section teacher-only-block">
+            <div class="section-label">⚠️ 遅延提出通知</div>
+            <div class="manage-card">
+                <div id="late-notifications">
+                    <p class="notif-empty">// 遅延提出なし</p>
+                </div>
+            </div>
+        </div>
+ 
+        <!-- 課題一覧（全員） -->
+        <div class="files-section" style="margin-bottom: 48px;">
+            <div class="files-header">
+                <div class="section-label" style="margin-bottom:0; flex:1">課題一覧</div>
+                <div class="files-count">合計 <span id="task-count">0</span> 件</div>
+            </div>
+            <div class="file-list" id="task-list">
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>// まだ課題がありません</p>
+                </div>
+            </div>
+        </div>
+ 
         <!-- Upload -->
         <div class="upload-section">
             <div class="section-label">ファイルアップロード</div>
+            <!-- 課題選択（生徒用） -->
+            <div class="manage-card" style="margin-bottom: 16px;">
+                <div class="form-row">
+                    <select id="upload-task-select" style="flex:1;">
+                        <option value="">── 課題を選択（任意）──</option>
+                    </select>
+                </div>
+            </div>
             <div class="drop-zone" id="drop-zone"
                 ondragover="onDragOver(event)"
                 ondragleave="onDragLeave(event)"
@@ -105,11 +156,10 @@
                 </div>
             </div>
             <input type="file" id="file-input"
-                webkitdirectory
-                multiple
+                webkitdirectory multiple
                 onchange="uploadFolder(this.files)">
         </div>
-
+ 
         <!-- File List -->
         <div class="files-section">
             <div class="files-header">
@@ -123,13 +173,20 @@
                 </div>
             </div>
         </div>
-
+ 
     </main>
 </div>
-
+ 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
-
+ 
+<!-- 提出状況モーダル（JS生成） -->
+ 
 <script src="../static/app.js"></script>
 </body>
 </html>
+ 
+
+
+
+

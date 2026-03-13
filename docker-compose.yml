@@ -1,0 +1,33 @@
+services:
+
+  # ── Go ファイルサーバー ──────────────────────────
+  file-server:
+    build: ./server
+    ports:
+      - "4450:4450"
+    volumes:
+      - ./server/uploads:/app/uploads   # アップロードデータ永続化
+      - db-data:/app                    # users.db 共有
+    environment:
+      TASK_SERVER_URL: http://task-server:8000
+    depends_on:
+      - task-server
+    restart: unless-stopped
+
+  # ── Python 課題管理サーバー ──────────────────────
+  task-server:
+    build: ./task-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - db-data:/data                   # users.db 共有（read/write）
+    environment:
+      DB_PATH: /data/users.db
+    restart: unless-stopped
+
+  # ── Python 実行環境（コード実行用） ──────────────
+  # docker build -t pylab-python ./docker-python で事前ビルドが必要
+  # （docker-compose では直接実行せず、file-serverがdocker runで呼び出す）
+
+volumes:
+  db-data:
