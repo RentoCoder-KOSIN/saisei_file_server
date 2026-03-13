@@ -6,7 +6,6 @@
     <title>PyLab — Python課題研究ファイルサーバー</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../static/style.css">
-
 </head>
 <body>
 
@@ -23,16 +22,13 @@
 
         <div class="form-group">
             <label>Username</label>
-            <input type="text" id="login-username" placeholder="student_id or teacher" />
+            <input type="text" id="login-username" placeholder="student_id or teacher"
+                onkeydown="if(event.key==='Enter') login()" />
         </div>
         <div class="form-group">
             <label>Password</label>
-            <input type="password" id="login-password" placeholder="••••••••" />
-        </div>
-
-        <div class="role-selector">
-            <button class="role-btn active" data-role="student" onclick="selectRole(this)">👨‍🎓 学生</button>
-            <button class="role-btn" data-role="teacher" onclick="selectRole(this)">👨‍🏫 先生</button>
+            <input type="password" id="login-password" placeholder="••••••••"
+                onkeydown="if(event.key==='Enter') login()" />
         </div>
 
         <button class="login-btn" onclick="login()">ログイン →</button>
@@ -59,6 +55,35 @@
     </header>
 
     <main>
+
+        <!-- ユーザー管理（先生のみ） -->
+        <div class="manage-section teacher-only-block">
+            <div class="section-label">ユーザー管理</div>
+            <div class="manage-card">
+                <div class="form-row">
+                    <input type="text" id="new-username" placeholder="ユーザー名" />
+                    <input type="password" id="new-password" placeholder="パスワード" />
+                    <select id="new-role">
+                        <option value="student">👨‍🎓 学生</option>
+                        <option value="teacher">👨‍🏫 先生</option>
+                    </select>
+                    <button class="action-btn run" onclick="addUser()">＋ 追加</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- パスワード変更（全員） -->
+        <div class="manage-section">
+            <div class="section-label">パスワード変更</div>
+            <div class="manage-card">
+                <div class="form-row">
+                    <input type="password" id="old-password" placeholder="現在のパスワード" />
+                    <input type="password" id="new-passwd" placeholder="新しいパスワード" />
+                    <button class="action-btn run" onclick="changePassword()">変更</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Upload -->
         <div class="upload-section">
             <div class="section-label">ファイルアップロード</div>
@@ -68,10 +93,9 @@
                 ondrop="onDrop(event)"
                 onclick="document.getElementById('file-input').click()">
                 <span class="drop-icon">📂</span>
-                <div class="drop-title">ファイルをドロップ</div>
-                <!--<div class="drop-sub">// .py ファイルのみ対応</div>-->
+                <div class="drop-title">フォルダをドロップ</div>
                 <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
-                    ＋ ファイルを選択
+                    ＋ フォルダを選択
                 </button>
                 <div class="progress-bar" id="progress-bar">
                     <div class="progress-track">
@@ -80,9 +104,8 @@
                     <div class="progress-label" id="progress-label">アップロード中...</div>
                 </div>
             </div>
-            <!--<input type="file" id="file-input" accept=".py" onchange="uploadFile(this.files[0])">-->
-            <input type="file" id="file-input" 
-                webkitdirectory 
+            <input type="file" id="file-input"
+                webkitdirectory
                 multiple
                 onchange="uploadFolder(this.files)">
         </div>
@@ -100,6 +123,7 @@
                 </div>
             </div>
         </div>
+
     </main>
 </div>
 
