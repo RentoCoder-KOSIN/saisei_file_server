@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PyLab — Python課題研究ファイルサーバー</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- ══════════════════════════
+     LOGIN SCREEN
+══════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">Py</div>
+      <div class="logo-text">Py<span>Lab</span></div>
+    </div>
+    <p class="login-subtitle">// Python課題研究ファイルサーバー</p>
+
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="student_id or teacher" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" />
+    </div>
+
+    <div class="role-selector">
+      <button class="role-btn active" data-role="student" onclick="selectRole(this)">👨‍🎓 学生</button>
+      <button class="role-btn" data-role="teacher" onclick="selectRole(this)">👨‍🏫 先生</button>
+    </div>
+
+    <button class="login-btn" onclick="login()">ログイン →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     MAIN APP
+══════════════════════════ -->
+<div id="app">
+  <header>
+    <div class="header-logo">
+      <div class="logo-icon">Py</div>
+      <div class="logo-name">Py<span>Lab</span></div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      server online
+    </div>
+    <div class="header-user">
+      <span class="user-badge" id="user-badge">student</span>
+      <button class="logout-btn" onclick="logout()">logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Upload -->
+    <div class="upload-section">
+      <div class="section-label">ファイルアップロード</div>
+
+      <div class="drop-zone" id="drop-zone"
+        ondragover="onDragOver(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event)"
+        onclick="document.getElementById('file-input').click()">
+        <span class="drop-icon">📂</span>
+        <div class="drop-title">ファイルをドロップ</div>
+        <div class="drop-sub">// .py ファイルのみ対応</div>
+        <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          ＋ ファイルを選択
+        </button>
+        <div class="progress-bar" id="progress-bar">
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-label" id="progress-label">アップロード中...</div>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept=".py" onchange="uploadFile(this.files[0])">
+    </div>
+
+    <!-- File List -->
+    <div class="files-section">
+      <div class="files-header">
+        <div class="section-label" style="margin-bottom:0; flex:1">アップロード済みファイル</div>
+        <div class="files-count">合計 <span id="file-count">0</span> 件</div>
+      </div>
+      <div class="file-list" id="file-list">
+        <div class="empty-state">
+          <div class="empty-icon">🗂️</div>
+          <p>// まだファイルがありません</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+</body>
+</html>
+
