@@ -223,10 +223,40 @@ function downloadFile(name) {
     a.click();
 }
 
-// ─── Run / Delete ───
-function runFile(name) {
+async function runFile(name) {
     showToast('▶ ' + name + ' を実行中...', 'success');
+
+    const res = await fetch('/run?name=' + encodeURIComponent(name), {
+        method: 'POST',
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        showToast('❌ 実行に失敗しました', 'error');
+        return;
+    }
+
+    showResult(name, data.stdout, data.stderr);
 }
+
+function showResult(name, stdout, stderr) {
+    const existing = document.getElementById('result-panel');
+    if (existing) existing.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'result-panel';
+    panel.innerHTML = `
+        <div class="result-header">
+            <span>▶ 実行結果：${name}</span>
+            <button onclick="document.getElementById('result-panel').remove()">✕</button>
+        </div>
+        <pre class="result-stdout">${stdout || '// 出力なし'}</pre>
+        ${stderr ? `<pre class="result-stderr">${stderr}</pre>` : ''}
+    `;
+    document.querySelector('main').appendChild(panel);
+}
+
 
 async function deleteFile(name) {
     const res = await fetch('/delete?name=' + encodeURIComponent(name), {
