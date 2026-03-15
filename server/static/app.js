@@ -2,8 +2,9 @@
 
 let currentRole = 'student';
 let currentUser = '';
+let allFiles = []; // 検索・フィルター用キャッシュ
 
-const TASK_API = 'http://localhost:8000';
+const TASK_API = '/api'; // Goのリバースプロキシ経由（環境に依存しない）
 
 // ─── Login ───
 async function login() {
@@ -85,7 +86,8 @@ async function addUser() {
     const res = await fetch('/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role }),
+        // operator: 操作者（ログイン中の先生）を追加
+        body: JSON.stringify({ operator: currentUser, username, password, role }),
     });
     const text = await res.text();
     if (res.ok) {
@@ -98,77 +100,27 @@ async function addUser() {
     }
 }
 
-// ─── Change Password ───
-async function changePassword() {
-    const oldPassword = document.getElementById('old-password').value;
-    const newPassword = document.getElementById('new-passwd').value;
-
-    if (!oldPassword || !newPassword) {
-        showToast('❌ パスワードを入力してください', 'error');
-        return;
-    }
-    const res = await fetch('/users/passwd', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            username:     currentUser,
-            old_password: oldPassword,
-            new_password: newPassword,
-        }),
-    });
+// ─── Delete User ───
+async function deleteUser(username) {
+    // operator: 操作者（ログイン中の先生）を追加
+    const res = await fetch(
+        `/users?username=${encodeURIComponent(username)}&operator=${encodeURIComponent(currentUser)}`,
+        { method: 'DELETE' }
+    );
     const text = await res.text();
     if (res.ok) {
         showToast(text, 'success');
-        document.getElementById('old-password').value = '';
-        document.getElementById('new-passwd').value = '';
+        fetchUsers();
     } else {
         showToast('❌ ' + text, 'error');
     }
 }
 
-// ─── Upload Folder ───
-async function uploadFolder(files) {
-    const progress = document.getElementById('progress-bar');
-    const fill     = document.getElementById('progress-fill');
-    const label    = document.getElementById('progress-label');
-    const taskId   = document.getElementById('upload-task-select').value;
-
-    progress.classList.add('show');
-
-    let done = 0;
-    const total = files.length;
-
-    for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('path', file.webkitRelativePath || file.name);
-        await fetch('/upload', { method: 'POST', body: formData });
-        done++;
-        const pct = Math.floor((done / total) * 100);
-        fill.style.width = pct + '%';
-        label.textContent = `アップロード中... ${done} / ${total} (${pct}%)`;
-    }
-
-    const folderName = files[0].webkitRelativePath.split('/')[0];
-    let url = `/finalize?folder=${encodeURIComponent(folderName)}&username=${encodeURIComponent(currentUser)}`;
-    if (taskId) url += `&task_id=${encodeURIComponent(taskId)}`;
-
-    await fetch(url, { method: 'POST' });
-
-    setTimeout(() => {
-        progress.classList.remove('show');
-        fill.style.width = '0%';
-        showToast('✅ ' + folderName + '.zip をアップロードしました', 'success');
-        fetchFiles();
-        fetchTasks();  // 提出済みを反映して課題一覧を更新
-        if (currentRole === 'teacher') fetchLateNotifications();
-    }, 400);
-}
-
 // ─── Fetch Users (先生のみ) ───
 async function fetchUsers() {
     try {
-        const res = await fetch('/users');
+        // operator: 操作者（ログイン中の先生）を追加
+        const res = await fetch(`/users?operator=${encodeURIComponent(currentUser)}`);
         if (!res.ok) return;
         const users = await res.json();
         renderUsers(users);
@@ -200,29 +152,169 @@ function renderUsers(users) {
     `).join('');
 }
 
+// ─── Change Password ───
+async function changePassword() {
+    const oldPassword = document.getElementById('old-password').value;
+    const newPassword = document.getElementById('new-passwd').value;
 
-async function deleteUser(username) {
-    const res = await fetch(`/users?username=${encodeURIComponent(username)}`, {
-        method: 'DELETE',
+    if (!oldPassword || !newPassword) {
+        showToast('❌ パスワードを入力してください', 'error');
+        return;
+    }
+    const res = await fetch('/users/passwd', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            username:     currentUser,
+            old_password: oldPassword,
+            new_password: newPassword,
+        }),
     });
     const text = await res.text();
     if (res.ok) {
         showToast(text, 'success');
-        fetchUsers();
+        document.getElementById('old-password').value = '';
+        document.getElementById('new-passwd').value = '';
     } else {
         showToast('❌ ' + text, 'error');
     }
+}
+
+// ─── Upload Folder(s) ───
+// files: FileList — 複数フォルダをまとめてドロップされた場合も対応
+async function uploadFolder(files) {
+    const taskId = document.getElementById('upload-task-select').value;
+
+    // フォルダ名でグループ分け
+    const groups = {};
+    for (const file of files) {
+        const folder = (file.webkitRelativePath || file.name).split('/')[0];
+        if (!groups[folder]) groups[folder] = [];
+        groups[folder].push(file);
+    }
+
+    const folderNames = Object.keys(groups);
+    if (folderNames.length === 0) return;
+
+    // 各フォルダのプログレスバーをまとめて描画
+    const container = document.getElementById('multi-progress-container');
+    if (!container) {
+        // index.html が古い場合のフォールバック
+        for (const folder of folderNames) {
+            await uploadSingleFolderLegacy(folder, groups[folder], taskId);
+        }
+        setTimeout(() => { fetchFiles(); fetchTasks(); if (currentRole === 'teacher') fetchLateNotifications(); }, 400);
+        return;
+    }
+    container.innerHTML = '';
+    container.classList.add('show');
+
+    const bars = {};
+    for (const folder of folderNames) {
+        const wrap = document.createElement('div');
+        wrap.className = 'multi-progress-item';
+        wrap.innerHTML = `
+            <div class="multi-progress-label" id="label-${CSS.escape(folder)}">${folder} — 待機中...</div>
+            <div class="progress-track">
+                <div class="progress-fill" id="fill-${CSS.escape(folder)}" style="width:0%"></div>
+            </div>
+        `;
+        container.appendChild(wrap);
+        bars[folder] = {
+            fill:  document.getElementById(`fill-${CSS.escape(folder)}`),
+            label: document.getElementById(`label-${CSS.escape(folder)}`),
+        };
+    }
+
+    // 各フォルダを並列アップロード
+    await Promise.all(folderNames.map(folder =>
+        uploadSingleFolder(folder, groups[folder], taskId, bars[folder])
+    ));
+
+    setTimeout(() => {
+        container.classList.remove('show');
+        container.innerHTML = '';
+        fetchFiles();
+        fetchTasks();
+        if (currentRole === 'teacher') fetchLateNotifications();
+    }, 600);
+}
+
+// index.html が古い環境向けフォールバック（プログレスバーなし）
+async function uploadSingleFolderLegacy(folderName, files, taskId) {
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', file.webkitRelativePath || file.name);
+        await fetch('/upload', { method: 'POST', body: formData });
+    }
+    let url = `/finalize?folder=${encodeURIComponent(folderName)}&username=${encodeURIComponent(currentUser)}`;
+    if (taskId) url += `&task_id=${encodeURIComponent(taskId)}`;
+    await fetch(url, { method: 'POST' });
+    showToast(`✅ ${folderName}.zip をアップロードしました`, 'success');
+}
+
+// 1フォルダ分のアップロード処理
+async function uploadSingleFolder(folderName, files, taskId, bar) {
+    let done = 0;
+    const total = files.length;
+    bar.label.textContent = `${folderName} — 0 / ${total}`;
+
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', file.webkitRelativePath || file.name);
+        await fetch('/upload', { method: 'POST', body: formData });
+        done++;
+        const pct = Math.floor((done / total) * 100);
+        bar.fill.style.width = pct + '%';
+        bar.label.textContent = `${folderName} — ${done} / ${total} (${pct}%)`;
+    }
+
+    let url = `/finalize?folder=${encodeURIComponent(folderName)}&username=${encodeURIComponent(currentUser)}`;
+    if (taskId) url += `&task_id=${encodeURIComponent(taskId)}`;
+    await fetch(url, { method: 'POST' });
+
+    bar.fill.style.width = '100%';
+    bar.label.textContent = `${folderName} ✅`;
+    showToast(`✅ ${folderName}.zip をアップロードしました`, 'success');
 }
 
 // ─── Fetch Files ───
 async function fetchFiles() {
     try {
         const res = await fetch('/files');
-        const names = await res.json();
-        renderFiles(names);
+        allFiles = await res.json() || [];
+        populateUserFilter(allFiles);
+        filterFiles();
     } catch (e) {
         showToast('❌ ファイル一覧の取得に失敗しました', 'error');
     }
+}
+
+// ─── Filter Files ───
+function filterFiles() {
+    const q    = (document.getElementById('search-input')?.value || '').toLowerCase();
+    const date = document.getElementById('search-date')?.value || '';
+    const user = document.getElementById('search-user')?.value || '';
+
+    const filtered = allFiles.filter(f => {
+        if (q && !f.filename.toLowerCase().includes(q) && !f.username.toLowerCase().includes(q)) return false;
+        if (date && !f.uploaded_at.startsWith(date)) return false;
+        if (user && f.username !== user) return false;
+        return true;
+    });
+    renderFiles(filtered);
+}
+
+// ユーザーフィルターのプルダウンを生成
+function populateUserFilter(files) {
+    const select = document.getElementById('search-user');
+    if (!select) return;
+    const users = [...new Set(files.map(f => f.username))].sort();
+    const current = select.value;
+    select.innerHTML = `<option value="">── ユーザーで絞り込み ──</option>` +
+        users.map(u => `<option value="${u}" ${u === current ? 'selected' : ''}>${u}</option>`).join('');
 }
 
 // ─── Render Files ───
@@ -236,14 +328,23 @@ function renderFiles(files) {
     }
 
     const isTeacher = document.body.classList.contains('is-teacher');
-    list.innerHTML = files.map((f, i) => `
+    list.innerHTML = files.map((f, i) => {
+        const parts = f.filename.split('/');
+        // 新構成: {username}/{task_id}/{folder}.zip → フォルダ名だけ表示
+        // 旧構成: {folder}.zip → そのまま表示
+        const basename = parts.pop();
+        const taskLabel = parts.length >= 2
+            ? `<span>📋 課題ID: ${parts[1]}</span>`
+            : '';
+        return `
         <div class="file-item" style="animation-delay:${i * 0.05}s">
             <div class="file-ext zip">${getExt(f.filename)}</div>
             <div class="file-info">
-                <div class="file-name">${f.filename}</div>
+                <div class="file-name">${basename}</div>
                 <div class="file-meta">
                     <span>📤 ${f.username}</span>
                     <span>📅 ${f.uploaded_at}</span>
+                    ${taskLabel}
                 </div>
             </div>
             <div class="file-actions">
@@ -253,11 +354,11 @@ function renderFiles(files) {
                 <button class="action-btn del" onclick="deleteFile('${f.filename}')">✕ 削除</button>
                 ` : ''}
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
-// ─── Download / Run / Delete ───
+// ─── Download ───
 function downloadFile(name) {
     const a = document.createElement('a');
     a.href = '/download?name=' + encodeURIComponent(name);
@@ -265,9 +366,13 @@ function downloadFile(name) {
     a.click();
 }
 
+// ─── Run（operator追加）───
 async function runFile(name) {
     showToast('▶ ' + name + ' を実行中...', 'success');
-    const res = await fetch('/run?name=' + encodeURIComponent(name), { method: 'POST' });
+    const res = await fetch(
+        `/run?name=${encodeURIComponent(name)}&operator=${encodeURIComponent(currentUser)}`,
+        { method: 'POST' }
+    );
     const data = await res.json();
     if (!res.ok) { showToast('❌ 実行に失敗しました', 'error'); return; }
     showResult(name, data.stdout, data.stderr);
@@ -289,8 +394,12 @@ function showResult(name, stdout, stderr) {
     document.querySelector('main').appendChild(panel);
 }
 
+// ─── Delete File（operator追加）───
 async function deleteFile(name) {
-    const res = await fetch('/delete?name=' + encodeURIComponent(name), { method: 'DELETE' });
+    const res = await fetch(
+        `/delete?name=${encodeURIComponent(name)}&operator=${encodeURIComponent(currentUser)}`,
+        { method: 'DELETE' }
+    );
     if (res.ok) {
         showToast('🗑️ ' + name + ' を削除しました', 'error');
         fetchFiles();
@@ -308,12 +417,10 @@ let mySubmittedTaskIds = new Set();
 
 async function fetchTasks() {
     try {
-        // 課題一覧取得
         const res = await fetch(TASK_API + '/tasks');
         if (!res.ok) return;
         allTasks = await res.json();
 
-        // 自分の提出済み課題IDを取得（生徒のみ）
         if (currentRole === 'student') {
             try {
                 const sRes = await fetch(`${TASK_API}/submissions/mine?username=${encodeURIComponent(currentUser)}`);
@@ -335,8 +442,6 @@ function renderTaskSelect(tasks) {
     const select = document.getElementById('upload-task-select');
     if (!select) return;
 
-    // 生徒：未提出かつ受付中のみ表示
-    // 先生：受付中のみ表示
     const filtered = tasks.filter(t => {
         if (t.is_expired) return false;
         if (currentRole === 'student' && mySubmittedTaskIds.has(t.id)) return false;
@@ -355,8 +460,6 @@ function renderTasks(tasks) {
     if (!list) return;
 
     const isTeacher = document.body.classList.contains('is-teacher');
-
-    // 生徒は提出済みを除外して表示
     const visible = isTeacher
         ? tasks
         : tasks.filter(t => !mySubmittedTaskIds.has(t.id));
@@ -397,7 +500,6 @@ function formatDeadline(iso) {
     return d.toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
 
-// ─── 課題作成 ───
 async function createTask() {
     const title    = document.getElementById('task-title').value.trim();
     const desc     = document.getElementById('task-desc').value.trim();
@@ -424,7 +526,6 @@ async function createTask() {
     }
 }
 
-// ─── 課題削除 ───
 async function deleteTask(taskId) {
     const res = await fetch(`${TASK_API}/tasks/${taskId}?username=${encodeURIComponent(currentUser)}`, {
         method: 'DELETE',
@@ -438,7 +539,6 @@ async function deleteTask(taskId) {
     }
 }
 
-// ─── 提出状況モーダル ───
 async function showSubmissionStatus(taskId, taskTitle) {
     const res = await fetch(`${TASK_API}/submissions/status/${taskId}`);
     if (!res.ok) { showToast('❌ 提出状況の取得に失敗しました', 'error'); return; }
@@ -484,7 +584,6 @@ function statusLabel(s) {
     return '⏳ 未提出';
 }
 
-// ─── 遅延通知 ───
 async function fetchLateNotifications() {
     try {
         const res = await fetch(TASK_API + '/notifications/late');

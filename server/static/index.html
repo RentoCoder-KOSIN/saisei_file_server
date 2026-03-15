@@ -9,9 +9,6 @@
 </head>
 <body>
 
-<!-- ══════════════════════════
-     LOGIN SCREEN
-══════════════════════════ -->
 <div id="login-screen">
     <div class="login-card">
         <div class="login-logo">
@@ -33,9 +30,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════
-     MAIN APP
-══════════════════════════ -->
 <div id="app">
     <header>
         <div class="header-logo">
@@ -83,15 +77,11 @@
             </div>
         </div>
 
-        <!-- ══════════════════════════
-             課題管理
-        ══════════════════════════ -->
-
         <!-- 課題作成（先生のみ） -->
         <div class="manage-section teacher-only-block">
             <div class="section-label">課題作成</div>
             <div class="manage-card">
-                <div class="form-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div class="form-row" style="flex-direction:column; align-items:stretch; gap:12px;">
                     <div style="display:flex; gap:12px; flex-wrap:wrap;">
                         <input type="text" id="task-title" placeholder="課題タイトル" style="flex:2; min-width:200px;" />
                         <input type="datetime-local" id="task-deadline" style="flex:1; min-width:180px;" />
@@ -115,7 +105,7 @@
         </div>
 
         <!-- 課題一覧（全員） -->
-        <div class="files-section" style="margin-bottom: 48px;">
+        <div class="files-section" style="margin-bottom:48px;">
             <div class="files-header">
                 <div class="section-label" style="margin-bottom:0; flex:1">課題一覧</div>
                 <div class="files-count">合計 <span id="task-count">0</span> 件</div>
@@ -131,8 +121,7 @@
         <!-- Upload -->
         <div class="upload-section">
             <div class="section-label">ファイルアップロード</div>
-            <!-- 課題選択（生徒用） -->
-            <div class="manage-card" style="margin-bottom: 16px;">
+            <div class="manage-card" style="margin-bottom:16px;">
                 <div class="form-row">
                     <select id="upload-task-select" style="flex:1;">
                         <option value="">── 課題を選択（任意）──</option>
@@ -149,16 +138,24 @@
                 <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
                     ＋ フォルダを選択
                 </button>
-                <div class="progress-bar" id="progress-bar">
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                    <div class="progress-label" id="progress-label">アップロード中...</div>
-                </div>
+                <div id="multi-progress-container"></div>
             </div>
             <input type="file" id="file-input"
                 webkitdirectory multiple
                 onchange="uploadFolder(this.files)">
+        </div>
+
+        <!-- 検索・フィルター -->
+        <div class="manage-card" style="margin-bottom:16px;">
+            <div class="form-row">
+                <input type="text" id="search-input" placeholder="🔍 ファイル名・ユーザー名で検索"
+                    oninput="filterFiles()" style="flex:2;" />
+                <input type="date" id="search-date"
+                    onchange="filterFiles()" style="flex:1; min-width:140px;" />
+                <select id="search-user" onchange="filterFiles()" style="flex:1; min-width:120px;">
+                    <option value="">全ユーザー</option>
+                </select>
+            </div>
         </div>
 
         <!-- File List -->
@@ -178,11 +175,7 @@
     </main>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
-
-<!-- 提出状況モーダル（JS生成） -->
-
 <script src="../static/app.js"></script>
 </body>
 </html>

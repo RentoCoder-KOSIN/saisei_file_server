@@ -1,6 +1,6 @@
 /server go mod init fileserver
 
-ver.1.1.0
+ver.1.3.0
 
 機能
 1.ログイン(DB認証)
@@ -12,11 +12,12 @@ ver.1.1.0
 7.ダウンロード
 8.削除(先生のみ)
 9.実行(先生のみ)
-10.課題作成・一覧（先生のみ作成、全員閲覧）  New
-11.課題への提出紐づけ（期限付き）            New
-12.遅延提出通知（先生のみ）                  New
-13.提出状況モーダル（提出済・遅延・未提出）   New
-
+10.課題作成・一覧（先生のみ作成、全員閲覧）
+11.課題への提出紐づけ（期限付き）          
+12.遅延提出通知（先生のみ）                
+13.提出状況モーダル（提出済・遅延・未提出） 
+14.複数フォルダアップロード New
+15.ファイル検索   New
 構成
 .
 ├── docker-compose.yml
@@ -38,6 +39,10 @@ ver.1.1.0
 起動方法
 # 1. Python実行イメージをビルド（初回のみ）
 docker build -t pylab-python ./docker-python
+
+Update:
+docker compose down
+docker compose up --build
 
 # 2. 全サービス起動
 docker compose up --build
