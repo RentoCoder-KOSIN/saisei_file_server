@@ -1,0 +1,20 @@
+[
+  {
+    "username": "admin",
+    "salt": "fab160947cb908570d969d4c7e6605cb",
+    "hash": "922243e639f6c63a16b0a1a26dde2d93fd41259ab56ae25fcec80aea354cc11b",
+    "role": "teacher"
+  },
+  {
+    "username": "rento",
+    "salt": "d04b78ca3ddf669b2cc06683ea08024b",
+    "hash": "1f62015ecfcc55e9d06f9a05a3b19808b3bc2ec82fd873aa024646d6c1ca3203",
+    "role": "student"
+  },
+  {
+    "username": "teacher",
+    "salt": "823a1f91f29780a1008e809932df7a9a",
+    "hash": "0d452bc00a513685cdc2dd978a6bd99b3fde44d3b2c03c99fa1eb046656cbc4b",
+    "role": "teacher"
+  }
+]

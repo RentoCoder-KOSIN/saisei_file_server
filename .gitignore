@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# SQLite
+*.sqlite3
+
+# Uploads / generated files
+uploads/
+tmp/
+cache/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (もし使うなら)
+node_modules/

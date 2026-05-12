@@ -1,0 +1,37 @@
+services:
+  file-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    depends_on:
+      task-server:
+        condition: service_started
+    environment:
+      HOST_UPLOAD_DIR: ${HOST_UPLOAD_DIR}
+      RUN_TIMEOUT_SEC: "60"
+      TASK_SERVER_URL: http://task-server:8000
+      TZ: Asia/Tokyo
+      DB_PATH: /app/data/db
+    ports:
+      - "4450:4450"
+    restart: unless-stopped
+    volumes:
+      - ${HOST_UPLOAD_DIR}:/app/uploads
+      - ./server/static:/app/static
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./server/data:/app/data
+
+  task-server:
+    build:
+      context: ./task-server
+      dockerfile: Dockerfile
+    environment:
+      DB_PATH: /data/users.db
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - db-data:/data
+
+volumes:
+  db-data:
