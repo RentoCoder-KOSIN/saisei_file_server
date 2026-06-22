@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
@@ -6,12 +7,29 @@ import subprocess
 import threading
 import webbrowser
 from PIL import Image, ImageTk
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVER_URL_FALLBACK = "http://localhost:4450"
+COMPOSE_DIR = BASE_DIR
+AUTOSTART = os.path.join(BASE_DIR, "autostart.sh")
+ICON_PATH = os.path.join(BASE_DIR, "icons", "icon.png")
+_PROJECT = os.path.basename(BASE_DIR).replace("-", "_").replace(" ", "_")
+CONTAINER = f"{_PROJECT}-file-server-1"
 
-SERVER_URL = "http://localhost:4450"
-COMPOSE_DIR = "/home/kosin/saisei_file_server"
-AUTOSTART = "/home/kosin/saisei_file_server/autostart.sh"
-ICON_PATH = "/home/kosin/saisei_file_server/icons/icon.png"
-CONTAINER = "saisei_file_server-file-server-1"
+
+def get_tailscale_url():
+    try:
+        result = subprocess.run(
+            ["tailscale", "funnel", "status"],
+            capture_output=True, text=True
+        )
+        for line in result.stdout.splitlines():
+            if "https://" in line:
+                for token in line.split():
+                    if token.startswith("https://"):
+                        return token.rstrip("/")
+    except Exception:
+        pass
+    return None
 
 
 def is_running():
@@ -138,7 +156,9 @@ class App(ttk.Window):
         threading.Thread(target=run, daemon=True).start()
 
     def _open_browser(self):
-        webbrowser.open(SERVER_URL)
+        url = get_tailscale_url() or SERVER_URL_FALLBACK
+        self._log(f"開く: {url}")
+        webbrowser.open(url)
 
 
 if __name__ == "__main__":
