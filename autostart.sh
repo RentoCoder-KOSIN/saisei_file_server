@@ -1,7 +1,7 @@
 #!/bin/bash
-set -e
+exec > /tmp/autostart_debug.log 2>&1
+set -ex   # -x でコマンドをすべてログに記録
 cd "$(dirname "$0")"
-
 # HOST_UPLOAD_DIR を自動設定
 export HOST_UPLOAD_DIR="$(pwd)/server/uploads"
 mkdir -p "$HOST_UPLOAD_DIR"

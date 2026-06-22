@@ -1,0 +1,6 @@
+# ──────────────────────────────────────────────────
+# HOST_UPLOAD_DIR: ホスト上のuploadsディレクトリの絶対パスを指定
+# Linux 例:   /home/yourname/saisei_file_server_new/server/uploads
+# Windows 例: C:/Users/yourname/saisei_file_server_new/server/uploads
+# ──────────────────────────────────────────────────
+HOST_UPLOAD_DIR=/path/to/saisei_file_server/server/uploads

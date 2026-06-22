@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FileServer
+Comment=シェルスクリプトで実行
+Exec=python3 /home/kosin/saisei_file_server/file-server-gui.py
+Icon=/home/kosin/saisei_file_server/icons/icon.png
+Terminal=false
+Categories=Utility;
